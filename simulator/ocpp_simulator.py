@@ -15,9 +15,17 @@ Usage:
 """
 
 import asyncio
+import base64
 import logging
+import os
 import sys
 from datetime import datetime, timezone
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # python-dotenv is optional; export env vars manually
 
 import websockets
 from ocpp.v16 import ChargePoint as cp
@@ -29,17 +37,28 @@ logging.basicConfig(
 )
 
 # ─── CONNECTION CONFIG ─────────────────────────────────────────────────────────
+# Set these via environment variables or a .env file (never hardcode credentials).
+# See simulator/.env.example for reference.
 
 # The Cumulocity managed object ID of the device (chargeBoxId in the URL).
 # This must already exist in your C8Y tenant as a managed object.
-DEVICE_ID = "39186717823"
+DEVICE_ID = os.environ["C8Y_DEVICE_ID"]
+
+# Cloud base URL, e.g. https://your-tenant.eu-latest.cumulocity.com
+_C8Y_BASE_URL = os.environ["C8Y_BASE_URL"].rstrip("/")
 
 # Cloud endpoint — deployed microservice via Cumulocity proxy
-CLOUD_URL = f"wss://psfactory.eu-latest.cumulocity.com/service/ocpp16j/ws/{DEVICE_ID}"
+CLOUD_URL = f"wss://{_C8Y_BASE_URL.removeprefix('https://').removeprefix('http://')}/service/ocpp16j/ws/{DEVICE_ID}"
 
-# Pre-built Authorization header value copied from Postman
-# (Basic base64(tenant/username:password))
-AUTH_HEADER = "Basic ***REMOVED***"
+
+def _build_auth_header() -> str:
+    """Build the Basic Auth header from C8Y_TENANT, C8Y_USERNAME, C8Y_PASSWORD."""
+    tenant   = os.environ["C8Y_TENANT"]
+    username = os.environ["C8Y_USERNAME"]
+    password = os.environ["C8Y_PASSWORD"]
+    token = base64.b64encode(f"{tenant}/{username}:{password}".encode()).decode()
+    return f"Basic {token}"
+
 
 # Local endpoint — no auth required, microservice running on your machine
 LOCAL_URL = f"ws://localhost:8080/ws/{DEVICE_ID}"
@@ -190,7 +209,7 @@ async def main():
         logging.info(f"Connecting to LOCAL MS: {url}")
     else:
         url = CLOUD_URL
-        headers = [("Authorization", AUTH_HEADER)]
+        headers = [("Authorization", _build_auth_header())]
         logging.info(f"Connecting to CLOUD MS: {url}")
 
     async with websockets.connect(
