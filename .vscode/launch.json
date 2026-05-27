@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run OCPP Gateway (dev)",
+            "request": "launch",
+            "mainClass": "com.c8y.ocpp16j.App",
+            "projectName": "ocpp16j",
+            "args": "--spring.profiles.active=dev",
+            "vmArgs": "-Dspring.profiles.active=dev",
+            "env": {}
+        }
+    ]
+}

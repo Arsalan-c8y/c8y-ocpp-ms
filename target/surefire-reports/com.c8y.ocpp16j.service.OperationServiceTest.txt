@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.c8y.ocpp16j.service.OperationServiceTest
+-------------------------------------------------------------------------------
+Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.303 s -- in com.c8y.ocpp16j.service.OperationServiceTest

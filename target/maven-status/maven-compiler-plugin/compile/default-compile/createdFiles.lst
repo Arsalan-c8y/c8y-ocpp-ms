@@ -1,0 +1,10 @@
+com\c8y\ocpp16j\websocket\ChargePointSessionRegistry.class
+com\c8y\ocpp16j\App.class
+com\c8y\ocpp16j\controller\ConnectionController.class
+com\c8y\ocpp16j\service\ConnectionService.class
+com\c8y\ocpp16j\service\OperationService.class
+com\c8y\ocpp16j\websocket\OcppWebSocketHandler$1.class
+com\c8y\ocpp16j\service\MeasurementService.class
+com\c8y\ocpp16j\websocket\OcppWebSocketHandler.class
+com\c8y\ocpp16j\service\DeviceMessageService.class
+com\c8y\ocpp16j\config\WebSocketConfig.class

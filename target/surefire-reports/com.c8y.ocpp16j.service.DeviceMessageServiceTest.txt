@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.c8y.ocpp16j.service.DeviceMessageServiceTest
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.343 s -- in com.c8y.ocpp16j.service.DeviceMessageServiceTest
