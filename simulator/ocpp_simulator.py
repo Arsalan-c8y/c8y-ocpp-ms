@@ -205,7 +205,8 @@ async def main():
 
     if use_local:
         url = LOCAL_URL
-        headers = None
+        # Local MS still enforces Cumulocity auth — send the same credentials
+        headers = [("Authorization", _build_auth_header())]
         logging.info(f"Connecting to LOCAL MS: {url}")
     else:
         url = CLOUD_URL

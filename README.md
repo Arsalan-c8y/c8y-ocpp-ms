@@ -95,10 +95,12 @@ Where `{chargeBoxId}` is the **Cumulocity managed object ID** of the device (e.g
 This endpoint requires authentication — see [Authentication for Cumulocity-Hosted MS](#authentication-for-cumulocity-hosted-ms).
 
 ### Local Development
-When running locally (`--spring.profiles.active=dev`), no authentication is required:
+When running locally (`--spring.profiles.active=dev`), the endpoint is:
 ```
 ws://localhost:8080/ws/{chargeBoxId}
 ```
+
+> **Note:** Authentication is still required even locally — the Cumulocity SDK validates credentials against the platform. See [Running Locally](#running-locally) for setup details.
 
 ### Postman Setup
 1. Create a new **WebSocket** request
@@ -157,7 +159,7 @@ In **Postman**, go to **Authorization → Basic Auth**, enter:
 
 Then copy the generated header value into the request headers.
 
-For the **Python simulator**, the `AUTH_HEADER` constant at the top of `ocpp_simulator.py` is already configured with the correct value.
+For the **Python simulator**, credentials are configured in the `simulator/.env` file (see [Configuring the simulator](#configuring-the-simulator)). The auth header is built automatically at runtime.
 
 ### Important: OCPP Subprotocol Requirement
 
@@ -201,17 +203,18 @@ pip install -r requirements.txt
 **Dependencies:**
 - `ocpp==0.26.0` — OCPP 1.6J protocol implementation
 - `websockets==13.1` — WebSocket client (version 13.1+ required for Python 3.13 compatibility)
+- `python-dotenv>=1.0.0` — Loads credentials from `.env` file
 
 ### Running against the local microservice
 
-Start the Java microservice first, then:
+Start the Java microservice first (see [Running Locally](#running-locally)), then:
 
 ```bash
 cd simulator
 python ocpp_simulator.py --local
 ```
 
-No authentication required. Connects to `ws://localhost:8080/ws/{DEVICE_ID}`.
+Connects to `ws://localhost:8080/ws/{DEVICE_ID}`. Authentication is still required — the simulator reads credentials from `simulator/.env` (see below).
 
 ### Running against the cloud-deployed microservice
 
@@ -220,7 +223,7 @@ cd simulator
 python ocpp_simulator.py
 ```
 
-Connects to `wss://<your-instance>.cumulocity.com/service/ocpp16j/ws/{DEVICE_ID}` with the `Authorization` header already configured in the script. To update credentials, edit the `AUTH_HEADER` constant at the top of `ocpp_simulator.py`.
+Connects to `wss://<your-instance>.cumulocity.com/service/ocpp16j/ws/{DEVICE_ID}` using credentials from `simulator/.env`.
 
 ### Expected simulator output
 
@@ -274,16 +277,25 @@ INFO  Processing c8y_Restart operation for deviceId=<your-device-id>, operationI
 INFO  Sent OCPP command for c8y_Restart to deviceId=<your-device-id>
 ```
 
-### Customising the simulator
+### Configuring the simulator
 
-The constants at the top of `simulator/ocpp_simulator.py` control the connection:
+The simulator reads all connection settings from environment variables (via a `simulator/.env` file). Copy the template and fill in your values:
 
-| Constant | Description |
+```bash
+cp simulator/.env.example simulator/.env
+```
+
+Then edit `simulator/.env`:
+
+| Variable | Description |
 |----------|-------------|
-| `DEVICE_ID` | The Cumulocity managed object ID to connect as |
-| `CLOUD_URL` | WebSocket URL for the cloud-deployed MS |
-| `LOCAL_URL` | WebSocket URL for the locally running MS |
-| `AUTH_HEADER` | Full `Authorization` header value for cloud access |
+| `C8Y_DEVICE_ID` | The Cumulocity managed object ID to connect as |
+| `C8Y_BASE_URL` | Your Cumulocity base URL (e.g. `https://psfactory.eu-latest.cumulocity.com`) |
+| `C8Y_TENANT` | Cumulocity tenant ID (e.g. `t10452223`) |
+| `C8Y_USERNAME` | Cumulocity username |
+| `C8Y_PASSWORD` | Cumulocity password |
+
+The `.env` file is git-ignored — credentials are never committed to the repository.
 
 ### Verifying results in Cumulocity
 
@@ -863,6 +875,60 @@ The microservice requires these roles (configured in `cumulocity.json`):
 |----------|---------|-------------|
 | `ocpp.operation.poll.interval` | `5000` | How often to poll for PENDING operations (ms) |
 | `spring.profiles.active` | — | Use `dev` for local development |
+
+---
+
+## Running Locally
+
+### Prerequisites
+
+- Java 17+
+- Maven 3.8+
+- Python 3.8+ (for the simulator)
+- A Cumulocity IoT tenant with the `ocpp16j` microservice registered
+
+### 1. Configure the microservice
+
+Edit `src/main/resources/application-dev.properties` and fill in the bootstrap credentials:
+
+```properties
+C8Y.bootstrap.tenant=<your-tenant-id>
+C8Y.baseURL=<your-cumulocity-url>
+C8Y.bootstrap.password=<bootstrap-password>
+```
+
+> The bootstrap password is found in **Administration → Microservices → ocpp16j → Show credentials** in your Cumulocity tenant.
+
+### 2. Start the microservice
+
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+Or skip tests for faster startup:
+
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=dev -DskipTests
+```
+
+The MS starts on `http://localhost:8080`.
+
+### 3. Configure the simulator
+
+```bash
+cp simulator/.env.example simulator/.env
+```
+
+Edit `simulator/.env` with your personal Cumulocity credentials (see [Configuring the simulator](#configuring-the-simulator)).
+
+### 4. Run the simulator
+
+```bash
+cd simulator
+pip install -r requirements.txt   # first time only
+python ocpp_simulator.py --local  # against local MS
+python ocpp_simulator.py          # against cloud MS
+```
 
 ---
 
